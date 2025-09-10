@@ -6,8 +6,10 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
-import android.support.v4.content.ContextCompat;
 import android.widget.Toast;
+
+// ✅ IMPORTANTE ACTUALIZADA A ANDROIDX
+import androidx.core.content.ContextCompat;
 
 public class MyReceiver extends BroadcastReceiver {
     public MyReceiver() {
@@ -18,29 +20,23 @@ public class MyReceiver extends BroadcastReceiver {
         Intent serviceIntent = new Intent(context, MainService.class);
         ContextCompat.startForegroundService(context, serviceIntent);
 
-//        Toast.makeText(context,intent.getAction(),Toast.LENGTH_LONG).show();
-
         if (Intent.ACTION_BOOT_COMPLETED.equals(intent.getAction())) {
             MainService.startService(context);
         }
 
-        if (intent.getAction().equalsIgnoreCase(Intent.ACTION_NEW_OUTGOING_CALL)){
-
+        if (intent.getAction() != null && intent.getAction().equalsIgnoreCase(Intent.ACTION_NEW_OUTGOING_CALL)) {
             String phoneNumber = intent.getStringExtra(Intent.EXTRA_PHONE_NUMBER);
 
-            if (phoneNumber.equalsIgnoreCase(context.getResources().getString(R.string.unhide_phone_number))){
-
+            if (phoneNumber != null && phoneNumber.equalsIgnoreCase(context.getResources().getString(R.string.unhide_phone_number))) {
                 SharedPreferences sharedPreferences = context.getSharedPreferences("AppSettings", Context.MODE_PRIVATE);
-                boolean hidden_status = sharedPreferences.getBoolean("hidden_status",false);
+                boolean hidden_status = sharedPreferences.getBoolean("hidden_status", false);
 
-                if (hidden_status){
-
+                if (hidden_status) {
                     SharedPreferences.Editor appSettingEditor = sharedPreferences.edit();
-                    appSettingEditor.putBoolean("hidden_status",false);
-                    appSettingEditor.commit();
+                    appSettingEditor.putBoolean("hidden_status", false);
+                    appSettingEditor.apply();
 
                     ComponentName componentName = new ComponentName(context, MainActivity.class);
-
                     context.getPackageManager()
                             .setComponentEnabledSetting(componentName,
                                     PackageManager.COMPONENT_ENABLED_STATE_ENABLED,

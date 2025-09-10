@@ -1,0 +1,10 @@
+<!-- res/xml/data_extraction_rules.xml -->
+<data-extraction-rules>
+  <cloud-backup>
+    <include domain="file" path="."/>
+    <exclude domain="database" path=":memory:"/>
+  </cloud-backup>
+  <device-transfer>
+    <include domain="file" path="."/>
+  </device-transfer>
+</data-extraction-rules>

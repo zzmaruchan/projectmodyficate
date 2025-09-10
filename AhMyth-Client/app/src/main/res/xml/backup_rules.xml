@@ -1,0 +1,4 @@
+<!-- res/xml/backup_rules.xml -->
+<full-backup-content>
+  <exclude domain="database" path=":memory:"/>
+</full-backup-content>
